@@ -33,8 +33,10 @@ class Application:
         Runs the main loop of the program, where the user enters commands.
         
         Args:
-            public: The user's public key loaded from login().
-            private: The user's private key loaded from login().
+            public: The user's public RSA key loaded from login().
+            private: The user's private RSA key loaded from login().
+            public_ecdh: The user's public ECDH key loaded from login().
+            private_ecdh: The user's private ECDH key loaded from login().
         """
         self.display_help()
         commands = {"oc": self.open_conversation, 
@@ -104,6 +106,10 @@ class Application:
 
 
     def edit_conversation(self):
+        """
+        Walks the user through deleting a message from local database.
+        This is just a test to edit a local saved chat.
+        """
         contacts = load_contacts(self.private)
         print_bar("VIEW CONVERSATION")
         display_messages(contacts)
