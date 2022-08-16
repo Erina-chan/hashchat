@@ -12,6 +12,8 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, load_pem_public_key
 
+from src.messages import message_x
+
 
 PORT = 5300
 
@@ -60,6 +62,9 @@ def transmit(contact, message, public, private, private_ecdh, public_ecdh, check
 
         # Sending message
         send_aes(sock, message, session, private)
+
+        x = message_x(seed, 0, message)
+        print(x.hexdigest())
 
 
 def send(sock, message):
