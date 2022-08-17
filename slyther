@@ -145,6 +145,12 @@ class Application:
         name = input("Name: ")
         ip = get_ip()
         fingerprint = input_default("Fingerprint", None)
+        
+        # Set contact start values
+        counter = 0
+        my_last_sign = None
+        contact_last_sign = None
+
 
         # Check for duplicates
         duplicate_id = 0
@@ -172,7 +178,7 @@ class Application:
                 print_green("Contact update cancelled.\n")
         else:
             new_id = name + ip
-            contacts[new_id] = {"name": name, "ip": ip, "fingerprint": fingerprint, "messages": []}
+            contacts[new_id] = {"name": name, "ip": ip, "fingerprint": fingerprint, "messages": [], "counter": counter, "my_last_sign": my_last_sign, "contact_last_sign": contact_last_sign, "hashchain": []}
             print_green("Contact added.\n")
 
         save_contacts(contacts, self.private)

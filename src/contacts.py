@@ -26,6 +26,12 @@ def load_contacts(private):
                                         "recieved": <bool>
                                         "contents": <text> 
                                     }
+                        "counter": <counter>,
+                        "my_last_sign": <my_last_sign>,
+                        "contact_last_sign">: <contact_last_sign>,
+                        "hashchain": {  "prev_hash": <prev_hash>,
+                                        "message_x": <message_x>
+                                    }
                     }
         }
     """
@@ -92,6 +98,9 @@ def display_contact(contact_id, contacts):
     print_green(contacts[contact_id]["name"])
     print("IP:", contacts[contact_id]["ip"])
     print("Fingerprint:", contacts[contact_id]["fingerprint"])
+    print("Counter:", contacts[contact_id]["counter"])
+    print("My last signature:", contacts[contact_id]["my_last_sign"])
+    print("Contact last signature:", contacts[contact_id]["contact_last_sign"])
     print()
 
 
