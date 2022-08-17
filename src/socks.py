@@ -66,6 +66,8 @@ def transmit(contact, message, public, private, private_ecdh, public_ecdh, check
         x = message_x(seed, 0, message)
         print(x.hexdigest())
 
+        return seed
+
 
 def send(sock, message):
     """

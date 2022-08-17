@@ -4,12 +4,14 @@ from datetime import datetime
 from random import random
 from subprocess import run
 import json
+from Crypto.Hash import SHA256
 
 from src.ui import *
 from src.keys import login
 import src.socks as socks
 from src.contacts import load_contacts, save_contacts, display_contact, display_convo, display_messages
 from src.fingerprints import create_fingerprint 
+from src.hashchain import message_x
 
 
 class Application:
@@ -75,7 +77,7 @@ class Application:
 
             if len(message.decode()) > 0:
                 try:
-                    socks.transmit(contacts[contact_id], message, self.public, self.private, self.private_ecdh, self.public_ecdh ,check_fingerprint=verify_fingerprints)
+                    seed = socks.transmit(contacts[contact_id], message, self.public, self.private, self.private_ecdh, self.public_ecdh ,check_fingerprint=verify_fingerprints)
                 
                 except socket.error as e:
                     print_red("Error: Failed to connect to contact. Transmission cancelled.\n")
@@ -101,6 +103,14 @@ class Application:
                                         "recieved": False, 
                                         "contents": message.decode()}
                     contacts[contact_id]["messages"].append(message_receipt)
+                    if (contacts[contact_id]["counter"] == 0):
+                        prev_hash = "0000000000000000000000000000000000000000000000000000000000000000"
+                    else:
+                        prev_hash = SHA256.new(contacts[contact_id]["hashchain"][contacts[contact_id]["counter"]-1]).hexdigest()
+                    contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
+                    message_block = { "prev_hash": prev_hash,
+                                      "messages_-x": message_x(seed=seed, counter=contacts[contact_id]["counter"], msg=message).hexdigest() }
+                    contacts[contact_id]["hashchain"].append(message_block) 
                     save_contacts(contacts, private)
                     print_green("Message delivered successfully.\n")
 
@@ -156,8 +166,7 @@ class Application:
         duplicate_id = 0
         for contact_id in contacts:
             if contacts[contact_id]["name"] == name or contacts[contact_id]["ip"] == ip:
-                duplicate_id = contact_id
-                
+                duplicate_id = contact_id                
         
         if duplicate_id:
             print_yellow("\n--- Warning: Contact exists ---")
