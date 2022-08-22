@@ -9,7 +9,7 @@ def message_x(seed, counter, msg):
     Args:
         seed: shared secret between this user and
         counter: messages number counter
-        msg; message sent/received
+        msg: message sent/received
 
     Returns:
     	The message's X code
