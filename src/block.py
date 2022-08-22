@@ -5,6 +5,6 @@ class block:
     self.prev_hash = prev_hash
     self.message_x = message_x
 
-  def block_hash():
+  def hash():
   	x = self.prev_hash + self.message_x
     return SHA256.new(x).hexdigest()

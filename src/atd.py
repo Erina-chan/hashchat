@@ -6,7 +6,7 @@ class AtD:
     for block in blocks:
     	self.sequency.append(block.hash())
 
-  def atd_hash():
+  def hash():
   	for value in sequency:
   		x = x + value
     return SHA256.new(x).hexdigest()

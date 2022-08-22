@@ -92,7 +92,7 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
         print(seed)
 
         x = message_x(seed, 0, message)
-        print(x.hexdigest())
+        print(x)
 
     except ValueError as e:
         print_red("    : Error receiving message.")
@@ -106,22 +106,30 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                             "recieved": True,
                             "contents": message.decode() }
 
+        msg_x = message_x(seed, contacts[contact_id]["counter"]+1, message)
+        message_block = block(prev_hash=contacts[contact_id]["hashchain"][-1].prev_hash, message_x=msg_x)
+
         if contact_id in contacts:
             # Edit message if untrusted 
             if contacts[contact_id]["fingerprint"] is not None and not verify_fingerprint(client_public, contacts[contact_id]["fingerprint"]):
                 message_receipt = { "time": datetime.now().strftime("%m/%d/%y %I:%M%p"), 
                                     "recieved": True,
                                     "contents": "!UNTRUSTED! {} !UNTRUSTED!".format(message.decode()) }
-            contacts[contact_id]["messages"].append(message_receipt)
+            
+            if not verify_prev_hash(new_block=message_block, last_block=contacts[contact_id]["hashchain"][-1]):
+                print_red(" PREV_HASH ERROR")
 
-            prev_hash = SHA256.new(contacts[contact_id]["hashchain"][contacts[contact_id]["counter"]-1])
+            # Verify block signature
+
+            contacts[contact_id]["messages"].append(message_receipt)
             contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
-            message_block = { "prev_hash": prev_hash.hexdigest(),
-                          "messages_-x": message_x(seed=seed, counter=contacts[contact_id]["counter"], msg=message).hexdigest() }
             contacts[contact_id]["hashchain"].append(message_block) 
         else:
-            message_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
-                          "messages_-x": message_x(seed=seed, counter=1, msg=message).hexdigest()} 
+            message_block = block(prev_hash="0000000000000000000000000000000000000000000000000000000000000000",
+                                  message_x=message_x(seed=seed, counter=1, msg=message))
+
+            # Verify block signature
+            
             contacts[contact_id] = {  "name": contact_id,
                                         "ip": addr[0],
                                         "fingerprint": create_fingerprint(client_public),

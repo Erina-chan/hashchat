@@ -15,30 +15,17 @@ def message_x(seed, counter, msg):
     	The message's X code
 	"""
 	x = seed +bytes(counter) + msg
-	return SHA256.new(x)
+	return SHA256.new(x).hexdigest()
 
-
-def generate_block(msg):
-	"""
-	...
-	"""
-	# get seed
-	
-	# get couter
-
-	# generate x
-
-	# get chian last_block 
-	
-	return prev_hash, mgs_x
-
-def verify_prev_hash(new_block):
+def verify_prev_hash(new_block, last_block):
 	"""
 	Verifies if the new_block's prev_hash is correct.
 
 	Args:
-		new_block
+		new_block: the block received before insert in hashchain.
+		last_block: the last block inserted in hashchain.
 
 	Returns:
 		Boolean value of validation result.
 	"""
+	return new_block.prev_hash == last_block.prev_hash

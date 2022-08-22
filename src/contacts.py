@@ -19,19 +19,22 @@ def load_contacts(private):
         A dictionary of contacts, in the format:
         { 
             id:     { 
-                        "name": <name>,
+                        "name": <string>,
                         "ip": <ip>,
                         "fingerprint": <fingerprint>,
                         "messages": {   "time": <time>,
                                         "recieved": <bool>
-                                        "contents": <text> 
-                                    }
-                        "counter": <counter>,
-                        "my_last_sign": <my_last_sign>,
-                        "contact_last_sign">: <contact_last_sign>,
-                        "hashchain": {  "prev_hash": <prev_hash>,
-                                        "message_x": <message_x>
-                                    }
+                                        "contents": <string> }
+                        "counter": <int>,
+                        "my_last_sign": <signature>,
+                        "contact_last_sign">: <signature>,
+                        "hashchain": {  
+                                "block": {  "prev_hash": <string>,
+                                            "message_x": <string> }
+                                or
+                                "atd": {
+                                            "position": <int>,
+                                            "sequency": <string[]> }
                     }
         }
     """

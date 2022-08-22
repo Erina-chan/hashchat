@@ -106,10 +106,10 @@ class Application:
                     if (contacts[contact_id]["counter"] == 0):
                         prev_hash = "0000000000000000000000000000000000000000000000000000000000000000"
                     else:
-                        prev_hash = SHA256.new(contacts[contact_id]["hashchain"][contacts[contact_id]["counter"]-1]).hexdigest()
+                        prev_hash = contacts[contact_id]["hashchain"][-1].hash()
                     contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
-                    message_block = { "prev_hash": prev_hash,
-                                      "messages_-x": message_x(seed=seed, counter=contacts[contact_id]["counter"], msg=message).hexdigest() }
+                    msg_x = message_x(seed=seed, counter=contacts[contact_id]["counter"], msg=message)
+                    message_block = block(prev_hash, msg_x)
                     contacts[contact_id]["hashchain"].append(message_block) 
                     save_contacts(contacts, private)
                     print_green("Message delivered successfully.\n")
