@@ -28,4 +28,4 @@ def verify_prev_hash(new_block, last_block):
 	Returns:
 		Boolean value of validation result.
 	"""
-	return new_block.prev_hash == last_block.prev_hash
+	return new_block["prev_hash"] == last_block["prev_hash"]

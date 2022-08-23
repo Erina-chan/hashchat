@@ -19,21 +19,21 @@ def load_contacts(private):
         A dictionary of contacts, in the format:
         { 
             id:     { 
-                        "name": <string>,
+                        "name": <name>,
                         "ip": <ip>,
                         "fingerprint": <fingerprint>,
                         "messages": {   "time": <time>,
-                                        "recieved": <bool>
-                                        "contents": <string> }
-                        "counter": <int>,
+                                        "recieved": <bool>,
+                                        "contents": <text> },
+                        "counter": <number>,
                         "my_last_sign": <signature>,
                         "contact_last_sign">: <signature>,
                         "hashchain": {  
                                 "block": {  "prev_hash": <string>,
                                             "message_x": <string> }
-                                or
+                                xor
                                 "atd": {
-                                            "position": <int>,
+                                            "position": <number>,
                                             "sequency": <string[]> }
                     }
         }
@@ -67,7 +67,7 @@ def save_contacts(contacts, private):
     Args:
         contacts: The contacts dictionary to save.
     """
-    key = get_random_bytes(16) 
+    key = get_random_bytes(16)
     contacts_string = json.dumps(contacts)
 
     encrypted_contacts = encrypt_aes(contacts_string.encode(), key)

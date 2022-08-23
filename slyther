@@ -11,7 +11,8 @@ from src.keys import login
 import src.socks as socks
 from src.contacts import load_contacts, save_contacts, display_contact, display_convo, display_messages
 from src.fingerprints import create_fingerprint 
-from src.hashchain import message_x
+from src.hashchain import message_x, verify_prev_hash
+from src.block import *
 
 
 class Application:
@@ -106,10 +107,11 @@ class Application:
                     if (contacts[contact_id]["counter"] == 0):
                         prev_hash = "0000000000000000000000000000000000000000000000000000000000000000"
                     else:
-                        prev_hash = contacts[contact_id]["hashchain"][-1].hash()
+                        prev_hash = contacts[contact_id]["hashchain"][-1]["prev_hash"]
                     contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
                     msg_x = message_x(seed=seed, counter=contacts[contact_id]["counter"], msg=message)
-                    message_block = block(prev_hash, msg_x)
+                    message_block = { "prev_hash": prev_hash,
+                                      "message_x": msg_x}
                     contacts[contact_id]["hashchain"].append(message_block) 
                     save_contacts(contacts, private)
                     print_green("Message delivered successfully.\n")

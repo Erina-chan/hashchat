@@ -13,7 +13,8 @@ from src.fingerprints import create_fingerprint, verify_fingerprint
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, load_pem_public_key
 
-from src.hashchain import message_x
+from src.hashchain import message_x, verify_prev_hash
+from src.block import *
 
 
 def print_banner():
@@ -107,7 +108,6 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                             "contents": message.decode() }
 
         msg_x = message_x(seed, contacts[contact_id]["counter"]+1, message)
-        message_block = block(prev_hash=contacts[contact_id]["hashchain"][-1].prev_hash, message_x=msg_x)
 
         if contact_id in contacts:
             # Edit message if untrusted 
@@ -116,8 +116,15 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                                     "recieved": True,
                                     "contents": "!UNTRUSTED! {} !UNTRUSTED!".format(message.decode()) }
             
-            if not verify_prev_hash(new_block=message_block, last_block=contacts[contact_id]["hashchain"][-1]):
-                print_red(" PREV_HASH ERROR")
+            if len(contacts[contact_id]["hashchain"]) > 0:
+                message_block = { "prev_hash": contacts[contact_id]["hashchain"][-1]["prev_hash"],
+                                  "message_x": msg_x}
+                if not verify_prev_hash(new_block=message_block, last_block=contacts[contact_id]["hashchain"][-1]):
+                    print_red(" PREV_HASH ERROR")
+            
+            else:
+                message_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                                  "message_x": msg_x}
 
             # Verify block signature
 
@@ -125,8 +132,8 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
             contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
             contacts[contact_id]["hashchain"].append(message_block) 
         else:
-            message_block = block(prev_hash="0000000000000000000000000000000000000000000000000000000000000000",
-                                  message_x=message_x(seed=seed, counter=1, msg=message))
+            message_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                              "message_x": msg_x}
 
             # Verify block signature
             

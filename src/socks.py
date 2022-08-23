@@ -12,7 +12,8 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, load_pem_public_key
 
-from src.hashchain import message_x
+from src.hashchain import message_x, verify_prev_hash
+from src.block import *
 
 
 PORT = 5300
