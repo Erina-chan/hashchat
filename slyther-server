@@ -106,9 +106,6 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
         message_receipt = { "time": datetime.now().strftime("%m/%d/%y %I:%M%p"), 
                             "recieved": True,
                             "contents": message.decode() }
-
-        msg_x = message_x(seed, contacts[contact_id]["counter"]+1, message)
-
         if contact_id in contacts:
             # Edit message if untrusted 
             if contacts[contact_id]["fingerprint"] is not None and not verify_fingerprint(client_public, contacts[contact_id]["fingerprint"]):
@@ -118,13 +115,12 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
             
             if len(contacts[contact_id]["hashchain"]) > 0:
                 message_block = { "prev_hash": contacts[contact_id]["hashchain"][-1]["prev_hash"],
-                                  "message_x": msg_x}
+                                  "message_x": message_x(seed, contacts[contact_id]["counter"]+1, message)}
                 if not verify_prev_hash(new_block=message_block, last_block=contacts[contact_id]["hashchain"][-1]):
                     print_red(" PREV_HASH ERROR")
-            
             else:
                 message_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
-                                  "message_x": msg_x}
+                                  "message_x": message_x(seed, 1, message)}
 
             # Verify block signature
 
@@ -133,7 +129,7 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
             contacts[contact_id]["hashchain"].append(message_block) 
         else:
             message_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
-                              "message_x": msg_x}
+                              "message_x": message_x(seed, 1, message)}
 
             # Verify block signature
             
