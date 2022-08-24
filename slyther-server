@@ -95,6 +95,8 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
         x = message_x(seed, 0, message)
         print(x)
 
+        ## RECEIVE BLOCK AND THIS SIGNATURE
+
     except ValueError as e:
         print_red("    : Error receiving message.")
         print(e)
@@ -114,33 +116,36 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                                     "contents": "!UNTRUSTED! {} !UNTRUSTED!".format(message.decode()) }
             
             if len(contacts[contact_id]["hashchain"]) > 0:
-                message_block = { "prev_hash": contacts[contact_id]["hashchain"][-1]["prev_hash"],
-                                  "message_x": message_x(seed, contacts[contact_id]["counter"]+1, message)}
-                if not verify_prev_hash(new_block=message_block, last_block=contacts[contact_id]["hashchain"][-1]):
-                    print_red(" PREV_HASH ERROR")
+                last_block = block(contacts[contact_id]["hashchain"][-1]["prev_hash"], contacts[contact_id]["hashchain"][-1]["message_x"]) 
+                prev_block_hash = last_block.hash()
+                my_block = { "prev_hash": prev_block_hash,
+                             "message_x": message_x(seed, contacts[contact_id]["counter"]+1, message)}
             else:
-                message_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
-                                  "message_x": message_x(seed, 1, message)}
-
-            # Verify block signature
-
-            contacts[contact_id]["messages"].append(message_receipt)
-            contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
-            contacts[contact_id]["hashchain"].append(message_block) 
-        else:
-            message_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
-                              "message_x": message_x(seed, 1, message)}
-
-            # Verify block signature
+                my_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                             "message_x": message_x(seed, 1, message)}
             
-            contacts[contact_id] = {  "name": contact_id,
-                                        "ip": addr[0],
-                                        "fingerprint": create_fingerprint(client_public),
-                                        "messages": [message_receipt],
-                                        "counter": 1, 
-                                        "my_last_sign": None, 
-                                        "contact_last_sign": None, 
-                                        "hashchain": [message_block] }
+            # Verify my_block and recived_block hashes (error: collision?)
+            # Verify block signature
+            if True:
+                contacts[contact_id]["messages"].append(message_receipt)
+                contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
+                contacts[contact_id]["hashchain"].append(my_block) 
+                contacts[contact_id]["contact_last_sign"] = None # signature
+        else:
+            my_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                         "message_x": message_x(seed, 1, message)}
+
+            # Verify my_block and recived_block hashes (error: collision?)
+            # Verify block signature
+            if True:
+                contacts[contact_id] = {  "name": contact_id,
+                                            "ip": addr[0],
+                                            "fingerprint": create_fingerprint(client_public),
+                                            "messages": [message_receipt],
+                                            "counter": 1, 
+                                            "my_last_sign": None, 
+                                            "contact_last_sign": None, # signature
+                                            "hashchain": [message_block] }
 
         save_contacts(contacts, private)
     finally:

@@ -11,9 +11,8 @@ from src.keys import login
 import src.socks as socks
 from src.contacts import load_contacts, save_contacts, display_contact, display_convo, display_messages
 from src.fingerprints import create_fingerprint 
-from src.hashchain import message_x, verify_prev_hash
+from src.hashchain import message_x
 from src.block import *
-
 
 class Application:
     def __init__(self, public, private, public_ecdh, private_ecdh):
@@ -100,19 +99,23 @@ class Application:
                         break
 
                 else:
+                    contacts = load_contacts(self.private)
                     message_receipt = { "time": datetime.now().strftime("%m/%d/%y %I:%M%p"), 
                                         "recieved": False, 
                                         "contents": message.decode()}
                     contacts[contact_id]["messages"].append(message_receipt)
                     if (contacts[contact_id]["counter"] == 0):
-                        prev_hash = "0000000000000000000000000000000000000000000000000000000000000000"
+                        prev_block_hash = "0000000000000000000000000000000000000000000000000000000000000000"
                     else:
-                        prev_hash = contacts[contact_id]["hashchain"][-1]["prev_hash"]
+                        last_block = block(contacts[contact_id]["hashchain"][-1]["prev_hash"], contacts[contact_id]["hashchain"][-1]["message_x"]) 
+                        prev_block_hash = last_block.hash()
                     contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
                     msg_x = message_x(seed=seed, counter=contacts[contact_id]["counter"], msg=message)
-                    message_block = { "prev_hash": prev_hash,
+                    message_block = { "prev_hash": prev_block_hash,
                                       "message_x": msg_x}
                     contacts[contact_id]["hashchain"].append(message_block) 
+                    # sign the block 
+                    contacts[contact_id]["my_last_sign"] = None
                     save_contacts(contacts, private)
                     print_green("Message delivered successfully.\n")
 
