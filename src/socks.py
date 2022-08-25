@@ -50,9 +50,6 @@ def transmit(contact, message, public, private, private_ecdh, public_ecdh, check
         send(sock, public_ecdh.public_bytes(encoding=Encoding.PEM, format=PublicFormat.SubjectPublicKeyInfo))
         client_public_ecdh = load_pem_public_key(data=receive(sock)) 
 
-        seed = exchange_ecdh(private_ecdh, client_public_ecdh)
-        print(seed)
-
         # Verify client key against fingerprint
         if check_fingerprint and contact["fingerprint"]:
             assert(verify_fingerprint(client_public, contact["fingerprint"]))
@@ -64,10 +61,15 @@ def transmit(contact, message, public, private, private_ecdh, public_ecdh, check
         # Sending message
         send_aes(sock, message, session, private)
 
+        # Sending block with this signature
+        seed = exchange_ecdh(private_ecdh, client_public_ecdh)
         x = message_x(seed, 0, message)
-        print(x)
-
-        ## SEND block AND THIS signature
+        if contact["counter"] == 0:
+            my_block = block("0000000000000000000000000000000000000000000000000000000000000000", x)
+        else: 
+            prev_block = block(contact["hashchain"][-1]["prev_hash"], contact["hashchain"][-1]["message_x"])
+            my_block = block(prev_block.hash(), x)
+        send_block(sock, my_block, session, private)
 
         return seed
 
@@ -267,6 +269,26 @@ def receive_aes(sock, client_public, key):
     verify(message, signature, client_public)
     
     return message
+
+
+def send_block(sock, block, session_key, private):
+    signature = sign(str.encode(block.hash()), private)
+    encrypted_signature = encrypt_aes(signature, session_key)
+    send(sock, str.encode(block.prev_hash))
+    send(sock, str.encode(block.message_x))
+    send(sock, encrypted_signature)
+
+
+def receive_block(sock, client_public, key):
+    message_prev_hash = receive(sock).decode("utf-8")
+    print(message_prev_hash)
+    message_x = receive(sock).decode("utf-8")
+    received_block = block(message_prev_hash, message_x)
+    encrypted_signature = receive(sock)
+    signature = decrypt_aes(encrypted_signature, key)
+    verify(str.encode(received_block.hash()), signature, client_public)
+    
+    return received_block
 
 
 def sign(message, key):

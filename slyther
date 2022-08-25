@@ -104,11 +104,11 @@ class Application:
                                         "recieved": False, 
                                         "contents": message.decode()}
                     contacts[contact_id]["messages"].append(message_receipt)
-                    if (contacts[contact_id]["counter"] == 0):
-                        prev_block_hash = "0000000000000000000000000000000000000000000000000000000000000000"
-                    else:
+                    if len(contacts[contact_id]["hashchain"]) > 0:
                         last_block = block(contacts[contact_id]["hashchain"][-1]["prev_hash"], contacts[contact_id]["hashchain"][-1]["message_x"]) 
                         prev_block_hash = last_block.hash()
+                    else:
+                        prev_block_hash = "0000000000000000000000000000000000000000000000000000000000000000"
                     contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
                     msg_x = message_x(seed=seed, counter=contacts[contact_id]["counter"], msg=message)
                     message_block = { "prev_hash": prev_block_hash,

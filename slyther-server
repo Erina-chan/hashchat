@@ -4,7 +4,7 @@ from threading import Thread
 from Crypto.PublicKey import RSA
 from Crypto.Hash import SHA256
 from datetime import datetime
-from src.socks import receive, receive_session, receive_aes, send, PORT, exchange_ecdh
+from src.socks import receive, receive_session, receive_aes, send, PORT, exchange_ecdh, receive_block
 from src.keys import login
 from src.contacts import load_contacts, save_contacts
 from src.ui import *
@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat,
 from src.hashchain import message_x, verify_prev_hash
 from src.block import *
 
+expected_hash = []
 
 def print_banner():
     """Prints the entry banner."""
@@ -88,14 +89,10 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
         print("    : Received session key.")
         message = receive_aes(sock, client_public, session_key)
         print("    : Received message.")
+        new_block = receive_block(sock, client_public, session_key)
+        print("    : Received block.")
 
         seed = exchange_ecdh(private_ecdh, client_public_ecdh)
-        print(seed)
-
-        x = message_x(seed, 0, message)
-        print(x)
-
-        ## RECEIVE BLOCK AND THIS SIGNATURE
 
     except ValueError as e:
         print_red("    : Error receiving message.")
@@ -104,7 +101,7 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
         print_red("    : Connection lost. Message not recieved.")
     else:
         print(" > Storing message...")
-
+        expected_hash = []
         message_receipt = { "time": datetime.now().strftime("%m/%d/%y %I:%M%p"), 
                             "recieved": True,
                             "contents": message.decode() }
@@ -116,21 +113,27 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                                     "contents": "!UNTRUSTED! {} !UNTRUSTED!".format(message.decode()) }
             
             if len(contacts[contact_id]["hashchain"]) > 0:
-                last_block = block(contacts[contact_id]["hashchain"][-1]["prev_hash"], contacts[contact_id]["hashchain"][-1]["message_x"]) 
+                last_block = block(contacts[contact_id]["hashchain"][-1]["prev_hash"], contacts[contact_id]["hashchain"][-1]["message_x"])
                 prev_block_hash = last_block.hash()
-                my_block = { "prev_hash": prev_block_hash,
+                my_block = { "prev_hash": prev_block_hash, 
                              "message_x": message_x(seed, contacts[contact_id]["counter"]+1, message)}
+                expected_hash.append(prev_block_hash)
             else:
                 my_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
                              "message_x": message_x(seed, 1, message)}
-            
-            # Verify my_block and recived_block hashes (error: collision?)
-            # Verify block signature
-            if True:
-                contacts[contact_id]["messages"].append(message_receipt)
-                contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
-                contacts[contact_id]["hashchain"].append(my_block) 
-                contacts[contact_id]["contact_last_sign"] = None # signature
+                expected_hash.append("0000000000000000000000000000000000000000000000000000000000000000")
+
+            if new_block.prev_hash in expected_hash:
+                if True: # verify_block_sign(new_message);
+                    contacts[contact_id]["messages"].append(message_receipt)
+                    contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
+                    contacts[contact_id]["hashchain"].append(my_block) 
+                    contacts[contact_id]["contact_last_sign"] = None # signature
+            #elif is atd:
+            #    ...
+            #else:
+            #    ...
+
         else:
             my_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
                          "message_x": message_x(seed, 1, message)}
