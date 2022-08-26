@@ -9,7 +9,7 @@ from Crypto.Hash import SHA256
 from src.ui import *
 from src.keys import login
 import src.socks as socks
-from src.contacts import load_contacts, save_contacts, display_contact, display_convo, display_messages
+from src.contacts import load_contacts, save_contacts, display_contact, display_convo, display_messages, export_chain
 from src.fingerprints import create_fingerprint 
 from src.hashchain import message_x
 from src.block import *
@@ -47,6 +47,7 @@ class Application:
                     "lc": self.list_contacts,
                     "dc": self.delete_contact,
                     "fp": self.get_fingerprint,
+                    "pc": self.export_hashchain,
                     "c" : self.clear_screen,
                     "h" : self.display_help,
                     "q" : self.quit 
@@ -77,7 +78,7 @@ class Application:
 
             if len(message.decode()) > 0:
                 try:
-                    seed = socks.transmit(contacts[contact_id], message, self.public, self.private, self.private_ecdh, self.public_ecdh ,check_fingerprint=verify_fingerprints)
+                    seed, sig = socks.transmit(contacts[contact_id], message, self.public, self.private, self.private_ecdh, self.public_ecdh ,check_fingerprint=verify_fingerprints)
                 
                 except socket.error as e:
                     print_red("Error: Failed to connect to contact. Transmission cancelled.\n")
@@ -114,8 +115,7 @@ class Application:
                     message_block = { "prev_hash": prev_block_hash,
                                       "message_x": msg_x}
                     contacts[contact_id]["hashchain"].append(message_block) 
-                    # sign the block 
-                    contacts[contact_id]["my_last_sign"] = None
+                    contacts[contact_id]["my_last_sign"] = str(sig)
                     save_contacts(contacts, private)
                     print_green("Message delivered successfully.\n")
 
@@ -218,6 +218,13 @@ class Application:
         for contact_id in contacts:
             display_contact(contact_id, contacts)
 
+    def export_hashchain(self):
+        contacts = load_contacts(self.private)
+        print_bar("VIEW CONVERSATION")
+        display_messages(contacts)
+        contact_id = get_recipient(contacts)
+        export_chain(contacts, contact_id)
+
 
     def get_fingerprint(self):
         print_bar("PUBLIC FINGERPRINT")
@@ -239,6 +246,7 @@ class Application:
         print("lc   -> List Contacts")
         print("dc   -> Delete Contact")
         print("fp   -> Display Fingerprint")
+        print("pc   -> Export hashchain")
         print("c    -> Clear Screen")
         print("h    -> Display help")
         print("q    -> Quit slyther\n")

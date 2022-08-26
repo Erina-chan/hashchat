@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, load_pem_public_key
 
-from src.hashchain import message_x, verify_prev_hash
+from src.hashchain import message_x
 from src.block import *
 
 
@@ -69,9 +69,9 @@ def transmit(contact, message, public, private, private_ecdh, public_ecdh, check
         else: 
             prev_block = block(contact["hashchain"][-1]["prev_hash"], contact["hashchain"][-1]["message_x"])
             my_block = block(prev_block.hash(), x)
-        send_block(sock, my_block, session, private)
+        sig = send_block(sock, my_block, session, private)
 
-        return seed
+        return seed, sig
 
 
 def send(sock, message):
@@ -277,6 +277,7 @@ def send_block(sock, block, session_key, private):
     send(sock, str.encode(block.prev_hash))
     send(sock, str.encode(block.message_x))
     send(sock, encrypted_signature)
+    return signature
 
 
 def receive_block(sock, client_public, key):
@@ -288,7 +289,7 @@ def receive_block(sock, client_public, key):
     signature = decrypt_aes(encrypted_signature, key)
     verify(str.encode(received_block.hash()), signature, client_public)
     
-    return received_block
+    return received_block, signature
 
 
 def sign(message, key):

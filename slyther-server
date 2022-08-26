@@ -13,7 +13,7 @@ from src.fingerprints import create_fingerprint, verify_fingerprint
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, load_pem_public_key
 
-from src.hashchain import message_x, verify_prev_hash
+from src.hashchain import message_x
 from src.block import *
 
 expected_hash = []
@@ -89,7 +89,7 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
         print("    : Received session key.")
         message = receive_aes(sock, client_public, session_key)
         print("    : Received message.")
-        new_block = receive_block(sock, client_public, session_key)
+        new_block, sig = receive_block(sock, client_public, session_key)
         print("    : Received block.")
 
         seed = exchange_ecdh(private_ecdh, client_public_ecdh)
@@ -101,7 +101,6 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
         print_red("    : Connection lost. Message not recieved.")
     else:
         print(" > Storing message...")
-        expected_hash = []
         message_receipt = { "time": datetime.now().strftime("%m/%d/%y %I:%M%p"), 
                             "recieved": True,
                             "contents": message.decode() }
@@ -117,23 +116,105 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                 prev_block_hash = last_block.hash()
                 my_block = { "prev_hash": prev_block_hash, 
                              "message_x": message_x(seed, contacts[contact_id]["counter"]+1, message)}
-                expected_hash.append(prev_block_hash)
             else:
                 my_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
                              "message_x": message_x(seed, 1, message)}
-                expected_hash.append("0000000000000000000000000000000000000000000000000000000000000000")
+                prev_block_hash = "0000000000000000000000000000000000000000000000000000000000000000"
 
-            if new_block.prev_hash in expected_hash:
-                if True: # verify_block_sign(new_message);
+            if new_block.prev_hash == prev_block_hash:
+                contacts[contact_id]["messages"].append(message_receipt)
+                contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
+                contacts[contact_id]["hashchain"].append(my_block) 
+                contacts[contact_id]["contact_last_sign"] = str(sig)
+            else:
+                collision = False
+                position = contacts[contact_id]["counter"]-2
+                last_block = block(contacts[contact_id]["hashchain"][position]["prev_hash"], contacts[contact_id]["hashchain"][position]["message_x"])
+                while not collision:
+                    if new_block.prev_hash == last_block.hash():
+                        collision = True
+                        break
+                    if contacts[contact_id]["messages"][position]["received"]:
+                        break
+                    position = position-1
+                    last_block = block(contacts[contact_id]["hashchain"][position]["prev_hash"], contacts[contact_id]["hashchain"][position]["message_x"])
+                if collision:
+                    collision_prev_block = block(contacts[contact_id]["hashchain"][position]["prev_hash"], contacts[contact_id]["hashchain"][position]["message_x"])
+                    my_block = block(collision_prev_block.hash(), message_x(seed, position+2, message))
+                    blocks = [collision_prev_block, my_block]
+                    n_blocks = 1
+                    expected_hash = [my_block.hash()]
                     contacts[contact_id]["messages"].append(message_receipt)
-                    contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
-                    contacts[contact_id]["hashchain"].append(my_block) 
-                    contacts[contact_id]["contact_last_sign"] = None # signature
-            #elif is atd:
-            #    ...
-            #else:
-            #    ...
+                    my_block_save = { "prev_hash": my_block.prev_hash, 
+                                      "message_x": my_block.message_x}
+                    contacts[contact_id]["hashchain"].append(my_block_save) 
+                    contacts[contact_id]["contact_last_sign"] = str(sig)
+                    while True:
+                        try:
+                            print(" > Performing RSA key exchange...")
+                            client_public = RSA.import_key(receive(sock))
+                            print("    : Received RSA public key.")
+                            
+                            # Check fingerprint
+                            if contact_id in contacts and contacts[contact_id]["fingerprint"] is not None:
+                                print(contacts[contact_id]["fingerprint"])
+                                if not verify_fingerprint(client_public, contacts[contact_id]["fingerprint"]):
+                                    print_yellow("    : Fingerprint mismatch. Untrusted.")
 
+                            send(sock, public.export_key())
+                            print("    : Sent RSA public key.")
+
+                            send(sock, public_ecdh.public_bytes(encoding=Encoding.PEM, format=PublicFormat.SubjectPublicKeyInfo))
+                            print("    : Sent ECDH public key.")
+
+                            print(" > Performing ECDH key exchange...")
+                            client_public_ecdh = load_pem_public_key(receive(sock))
+                            print("    : Received ECDH public key.")
+
+                            print(" > Receiving message...")
+                            session_key = receive_session(sock, client_public, private)
+                            print("    : Received session key.")
+                            message = receive_aes(sock, client_public, session_key)
+                            print("    : Received message.")
+                            new_block, sig = receive_block(sock, client_public, session_key)
+                            print("    : Received block.") ## Aqui receive block or atd
+
+                            seed = exchange_ecdh(private_ecdh, client_public_ecdh)
+
+                        except ValueError as e:
+                            print_red("    : Error receiving message.")
+                            print(e)
+                        except OSError:
+                            print_red("    : Connection lost. Message not recieved.")
+                        else:
+                            print(" > Storing message...")
+                            message_receipt = { "time": datetime.now().strftime("%m/%d/%y %I:%M%p"), 
+                                                "recieved": True,
+                                                "contents": message.decode() }
+                            # Edit message if untrusted 
+                            if contacts[contact_id]["fingerprint"] is not None and not verify_fingerprint(client_public, contacts[contact_id]["fingerprint"]):
+                                message_receipt = { "time": datetime.now().strftime("%m/%d/%y %I:%M%p"), 
+                                                    "recieved": True,
+                                                    "contents": "!UNTRUSTED! {} !UNTRUSTED!".format(message.decode()) }
+                            if new_block.prev_hash in expected_hash:
+                                last_block = blocks[-1]
+                                prev_block_hash = last_block.hash()
+                                my_block_save = { "prev_hash": prev_block_hash, 
+                                             "message_x": message_x(seed, position+2+n_blocks, message)}
+                                if True: # Verify signature
+                                    contacts[contact_id]["messages"].append(message_receipt)
+                                    contacts[contact_id]["hashchain"].append(my_block_save) 
+                                    contacts[contact_id]["contact_last_sign"] = str(sig)
+                                    blocks.append(new_block)
+                                    n_blocks = n_blocks + 1
+                                    expected_hash = [new_block.hash()]
+
+                    my_atd = AtD(position, blocks)
+                    seed_atd(my_atd)
+                    atd = {"position": my_atd.position,
+                           "sequency": my_atd.sequency}
+                    contacts[contact_id]["hashchain"].append(atd) 
+                    contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + n_blocks + 2            
         else:
             my_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
                          "message_x": message_x(seed, 1, message)}
@@ -147,8 +228,8 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                                             "messages": [message_receipt],
                                             "counter": 1, 
                                             "my_last_sign": None, 
-                                            "contact_last_sign": None, # signature
-                                            "hashchain": [message_block] }
+                                            "contact_last_sign": str(sig),
+                                            "hashchain": [my_block] }
 
         save_contacts(contacts, private)
     finally:

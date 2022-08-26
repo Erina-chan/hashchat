@@ -7,6 +7,7 @@ from Crypto.Random import get_random_bytes
 
 CONTACTS_DIR = "data/contacts/"
 CONTACTS_PATH = "data/contacts/contacts.json"
+CHAIN_PATH = "data/contacts/hashchain.json"
 
 def load_contacts(private):
     """
@@ -89,6 +90,19 @@ def save_contacts(contacts, private):
         else:
             print_red("Error: Contacts file not accessible.")
 
+def export_chain(contacts, contact_id):
+    chain_string = json.dumps(contacts[contact_id]["hashchain"])
+    chain_bytes = chain_string.encode()
+    try:
+        with open(CHAIN_PATH, "wb") as contacts_file:
+            contacts_file.write(chain_bytes)
+    except OSError:
+        if not exists(CONTACTS_DIR):
+            makedirs(CONTACTS_DIR)
+            with open(CHAIN_PATH, "wb") as contacts_file:
+                contacts_file.write(chain_bytes)
+        else:
+            print_red("Error: Contacts file not accessible.")
 
 def display_contact(contact_id, contacts):
     """

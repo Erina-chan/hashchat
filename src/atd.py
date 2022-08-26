@@ -12,6 +12,3 @@ class AtD:
 			x = x + value
 		x_as_bytes = str.encode(x)
 		return SHA256.new(x).hexdigest()
-
-	def verify_AtD (new_block):
-		
