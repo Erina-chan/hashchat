@@ -116,6 +116,7 @@ class Application:
                                       "message_x": msg_x}
                     contacts[contact_id]["hashchain"].append(message_block) 
                     contacts[contact_id]["my_last_sign"] = str(sig)
+                    contacts[contact_id]["seed"] = str(seed)
                     save_contacts(contacts, private)
                     print_green("Message delivered successfully.\n")
 
@@ -165,7 +166,7 @@ class Application:
         counter = 0
         my_last_sign = None
         contact_last_sign = None
-
+        seed = None
 
         # Check for duplicates
         duplicate_id = 0
@@ -192,7 +193,7 @@ class Application:
                 print_green("Contact update cancelled.\n")
         else:
             new_id = name + ip
-            contacts[new_id] = {"name": name, "ip": ip, "fingerprint": fingerprint, "messages": [], "counter": counter, "my_last_sign": my_last_sign, "contact_last_sign": contact_last_sign, "hashchain": []}
+            contacts[new_id] = {"name": name, "ip": ip, "fingerprint": fingerprint, "messages": [], "seed": seed, "counter": counter, "my_last_sign": my_last_sign, "contact_last_sign": contact_last_sign, "hashchain": []}
             print_green("Contact added.\n")
 
         save_contacts(contacts, self.private)

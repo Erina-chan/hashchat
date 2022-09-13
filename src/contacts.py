@@ -26,6 +26,7 @@ def load_contacts(private):
                         "messages": {   "time": <time>,
                                         "recieved": <bool>,
                                         "contents": <text> },
+                        "seed": <byte>
                         "counter": <number>,
                         "my_last_sign": <signature>,
                         "contact_last_sign">: <signature>,
@@ -91,7 +92,28 @@ def save_contacts(contacts, private):
             print_red("Error: Contacts file not accessible.")
 
 def export_chain(contacts, contact_id):
-    chain_string = json.dumps(contacts[contact_id]["hashchain"])
+    n = len(contacts[contact_id]["hashchain"])
+    while n >= 0:
+        if contacts[contact_id]["messages"][n]["Received"] == False: 
+            my_last = n
+            break
+        n = n - 1
+
+    n = len(contacts[contact_id]["hashchain"])
+    while n >= 0:
+        if contacts[contact_id]["messages"][n]["Received"] == True: 
+            contact_last = n
+            break
+        n = n - 1
+
+    chain = {   "seed": contacts[contact_id]["seed"], 
+                "my_last_sign": {   "position": my_last,
+                                    "sign": contacts[contact_id]["my_last_sign"]}, 
+                "contact_last_sign": {  "position": contact_last,
+                                        "sign": contacts[contact_id]["contact_last_sign"]}, 
+                "hashchain": contacts[contact_id]["hashchain"]}
+
+    chain_string = json.dumps(chain)
     chain_bytes = chain_string.encode()
     try:
         with open(CHAIN_PATH, "wb") as contacts_file:
@@ -115,6 +137,7 @@ def display_contact(contact_id, contacts):
     print_green(contacts[contact_id]["name"])
     print("IP:", contacts[contact_id]["ip"])
     print("Fingerprint:", contacts[contact_id]["fingerprint"])
+    print("Seed:", contacts[contact_id]["seed"])
     print("Counter:", contacts[contact_id]["counter"])
     print("My last signature:", contacts[contact_id]["my_last_sign"])
     print("Contact last signature:", contacts[contact_id]["contact_last_sign"])

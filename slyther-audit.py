@@ -136,7 +136,7 @@ if __name__ == "__main__":
                 n_start = n_start + 1
             except KeyboardInterrupt:
                 if confirm("\nWould you like to conclude the audit? (Y/n) "):
-                    # verifica a conexão do último bloco com o próximo
+                    # checks the link of the last audited block to the next in the chain
                     prev_block = chain["hashchain"][n_start-1]
                     if chain["hashchain"][n_start]["prev_hash"] != prev_block.hash():
                         print("May happened a change in the records.")
