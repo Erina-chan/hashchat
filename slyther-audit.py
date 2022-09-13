@@ -3,6 +3,7 @@ import json
 from os.path import exists
 from src.ui import *
 import src.block
+from src.hashchain import message_x
 from Crypto.Hash import SHA256
 from Crypto.Signature import pkcs1_15
 
@@ -24,6 +25,7 @@ def load_hashchain():
     Returns:
         A dictionary of chain, in the format:
         { 
+            "seed": <byte>
             "my_last_sign": {   
                     position: <int>,
                     sign: <signature> },
@@ -114,12 +116,33 @@ if __name__ == "__main__":
         print_red("    : Error verifing first signatures.")
         print(e)
 
+    correct = True
     print("This chain last signatures are valid.")
     print("From what message do you want to start the audit?")
-    # Acceptance loop
-    while True:
-        try:
-            message = input("Message position number: ").encode()
-        except KeyboardInterrupt:
-            if confirm("\nWould you like to conclude the audit? (Y/n) "):
-               break 
+    n_start = input("Message position number: ").encode()
+    message = input("Message content: ").encode()
+    prev_block = chain["hashchain"][n_start-2]
+    if chain["hashchain"][n_start-1]["prev_hash"] == prev_block.hash() and 
+       chain["hashchain"][n_start-1]["message_x"] == message_x(seed, n_start, message):
+        while n_start < len(chain["hashchain"]):
+            try:
+                message = input("Next message content: ").encode()
+                prev_block = chain["hashchain"][n_start-1]
+                if chain["hashchain"][n_start]["prev_hash"] != prev_block.hash() or 
+                   chain["hashchain"][n_start]["message_x"] != message_x(seed, n_start+1, message):
+                    print("May happened a change in the records.")
+                    correct = False
+                    break
+                n_start = n_start + 1
+            except KeyboardInterrupt:
+                if confirm("\nWould you like to conclude the audit? (Y/n) "):
+                    # verifica a conexão do último bloco com o próximo
+                    prev_block = chain["hashchain"][n_start-1]
+                    if chain["hashchain"][n_start]["prev_hash"] != prev_block.hash():
+                        print("May happened a change in the records.")
+                        correct = False
+                    break 
+        if correct:
+            print("All records are correct.")
+    else:
+        print("May happened a change in the records.")
