@@ -2,10 +2,11 @@
 import json
 from os.path import exists
 from src.ui import *
-import src.block
+from src.block import *
 from src.hashchain import message_x
 from Crypto.Hash import SHA256
 from Crypto.Signature import pkcs1_15
+from Crypto.PublicKey import RSA
 
 CHAIN_PATH = "data/audit/hashchain.json"
 MY_PUBLIC_KEY_PATH = "data/audit/my_public.pem"
@@ -89,7 +90,7 @@ def verify_sign(block, signature, key):
         ValueError: Invalid signature.
     """
     verifier = pkcs1_15.new(key)
-    hasher = SHA256.new(message)
+    hasher = SHA256.new(block)
     verifier.verify(hasher, signature)
 
 
@@ -102,16 +103,16 @@ if __name__ == "__main__":
     # Verify signatures
     try:
         my_int = chain["my_last_sign"]["position"]
-        my_last_block = chain["hashchain"][my_int]
-        verify(str.encode(my_last_block.hash()), chain["my_last_sign"]["sign"], my_public_key)
+        my_last_block = block(chain["hashchain"][my_int]["prev_hash"], chain["hashchain"][my_int]["message_x"])
+        verify_sign(str.encode(my_last_block.hash()), chain["my_last_sign"]["sign"], my_public_key)
     except ValueError as e:
         print_red("    : Error verifing first signatures.")
         print(e)
 
     try:
         contact_int = chain["contact_last_sign"]["position"]
-        contact_last_block = chain["hashchain"][contact_int]
-        verify(str.encode(contact_last_block.hash()), chain["contact_last_sign"]["sign"], contact_public_key)
+        contact_last_block = block(chain["hashchain"][contact_int]["prev_hash"], chain["hashchain"][contact_int]["message_x"])
+        verify_sign(str.encode(contact_last_block.hash()), chain["contact_last_sign"]["sign"], contact_public_key)
     except ValueError as e:
         print_red("    : Error verifing first signatures.")
         print(e)
@@ -121,15 +122,13 @@ if __name__ == "__main__":
     print("From what message do you want to start the audit?")
     n_start = input("Message position number: ").encode()
     message = input("Message content: ").encode()
-    prev_block = chain["hashchain"][n_start-2]
-    if chain["hashchain"][n_start-1]["prev_hash"] == prev_block.hash() and 
-       chain["hashchain"][n_start-1]["message_x"] == message_x(seed, n_start, message):
+    prev_block = block(chain["hashchain"][n_start-2]["prev_hash"], chain["hashchain"][n_start-2]["message_x"])
+    if chain["hashchain"][n_start-1]["prev_hash"] == prev_block.hash() and chain["hashchain"][n_start-1]["message_x"] == message_x(seed, n_start, message):
         while n_start < len(chain["hashchain"]):
             try:
                 message = input("Next message content: ").encode()
-                prev_block = chain["hashchain"][n_start-1]
-                if chain["hashchain"][n_start]["prev_hash"] != prev_block.hash() or 
-                   chain["hashchain"][n_start]["message_x"] != message_x(seed, n_start+1, message):
+                prev_block = block(chain["hashchain"][n_start-1]["prev_hash"], chain["hashchain"][n_start-1]["message_x"])
+                if chain["hashchain"][n_start]["prev_hash"] != prev_block.hash() or chain["hashchain"][n_start]["message_x"] != message_x(seed, n_start+1, message):
                     print("May happened a change in the records.")
                     correct = False
                     break
@@ -137,7 +136,7 @@ if __name__ == "__main__":
             except KeyboardInterrupt:
                 if confirm("\nWould you like to conclude the audit? (Y/n) "):
                     # checks the link of the last audited block to the next in the chain
-                    prev_block = chain["hashchain"][n_start-1]
+                    prev_block = block(chain["hashchain"][n_start-1]["prev_hash"], chain["hashchain"][n_start-1]["message_x"])
                     if chain["hashchain"][n_start]["prev_hash"] != prev_block.hash():
                         print("May happened a change in the records.")
                         correct = False
