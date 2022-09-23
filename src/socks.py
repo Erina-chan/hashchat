@@ -63,7 +63,7 @@ def transmit(contact, message, public, private, private_ecdh, public_ecdh, check
 
         # Sending block with this signature
         seed = exchange_ecdh(private_ecdh, client_public_ecdh)
-        x = message_x(seed, 0, message)
+        x = message_x(seed, contact["counter"]+1, message)
         if contact["counter"] == 0:
             my_block = block("0000000000000000000000000000000000000000000000000000000000000000", x)
         else: 
@@ -282,7 +282,6 @@ def send_block(sock, block, session_key, private):
 
 def receive_block(sock, client_public, key):
     message_prev_hash = receive(sock).decode("utf-8")
-    print(message_prev_hash)
     message_x = receive(sock).decode("utf-8")
     received_block = block(message_prev_hash, message_x)
     encrypted_signature = receive(sock)

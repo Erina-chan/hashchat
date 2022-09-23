@@ -120,12 +120,15 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                 my_block = { "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
                              "message_x": message_x(seed, 1, message)}
                 prev_block_hash = "0000000000000000000000000000000000000000000000000000000000000000"
-
+            
             if new_block.prev_hash == prev_block_hash:
                 contacts[contact_id]["messages"].append(message_receipt)
                 contacts[contact_id]["counter"] = contacts[contact_id]["counter"] + 1
                 contacts[contact_id]["hashchain"].append(my_block) 
                 contacts[contact_id]["contact_last_sign"] = str(sig)
+                f = open("contact_last_sign.txt", "wb")
+                f.write(sig)
+                f.close()
                 contacts[contact_id]["seed"] = str(seed)
             else:
                 collision = False
@@ -150,6 +153,9 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                                       "message_x": my_block.message_x}
                     contacts[contact_id]["hashchain"].append(my_block_save) 
                     contacts[contact_id]["contact_last_sign"] = str(sig)
+                    f = open("contact_last_sign.txt", "wb")
+                    f.write(sig)
+                    f.close()
                     while True:
                         try:
                             print(" > Performing RSA key exchange...")
@@ -206,6 +212,9 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                                     contacts[contact_id]["messages"].append(message_receipt)
                                     contacts[contact_id]["hashchain"].append(my_block_save) 
                                     contacts[contact_id]["contact_last_sign"] = str(sig)
+                                    f = open("contact_last_sign.txt", "wb")
+                                    f.write(sig)
+                                    f.close()
                                     contacts[contact_id]["seed"] = str(seed)
                                     blocks.append(new_block)
                                     n_blocks = n_blocks + 1
@@ -233,6 +242,10 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                                             "my_last_sign": None, 
                                             "contact_last_sign": str(sig),
                                             "hashchain": [my_block] }
+
+                f = open("contact_last_sign.txt", "wb")
+                f.write(sig)
+                f.close()
 
         save_contacts(contacts, private)
     finally:

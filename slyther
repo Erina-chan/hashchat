@@ -116,6 +116,9 @@ class Application:
                                       "message_x": msg_x}
                     contacts[contact_id]["hashchain"].append(message_block) 
                     contacts[contact_id]["my_last_sign"] = str(sig)
+                    f = open("my_last_sign.txt", "wb")
+                    f.write(sig)
+                    f.close()
                     contacts[contact_id]["seed"] = str(seed)
                     save_contacts(contacts, private)
                     print_green("Message delivered successfully.\n")

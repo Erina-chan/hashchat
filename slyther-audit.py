@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import json
+import sys
+import base64
 from os.path import exists
 from src.ui import *
 from src.block import *
@@ -104,18 +106,28 @@ if __name__ == "__main__":
     try:
         my_int = chain["my_last_sign"]["position"]
         my_last_block = block(chain["hashchain"][my_int]["prev_hash"], chain["hashchain"][my_int]["message_x"])
-        verify_sign(str.encode(my_last_block.hash()), chain["my_last_sign"]["sign"], my_public_key)
+        
+        in_file = open("data/audit/my_last_sign.txt", "rb") 
+        my_sign = in_file.read() 
+        in_file.close()
+        verify_sign(str.encode(my_last_block.hash()), my_sign, my_public_key)
     except ValueError as e:
         print_red("  Error verifing: invalid first signatures.")
         print(e)
+        #sys.exit()
 
     try:
         contact_int = chain["contact_last_sign"]["position"]
         contact_last_block = block(chain["hashchain"][contact_int]["prev_hash"], chain["hashchain"][contact_int]["message_x"])
-        verify_sign(str.encode(contact_last_block.hash()), chain["contact_last_sign"]["sign"], contact_public_key)
+        
+        in_file = open("data/audit/contact_last_sign.txt", "rb") 
+        contact_sign = in_file.read() 
+        in_file.close()
+        verify_sign(str.encode(contact_last_block.hash()), contact_sign, contact_public_key)
     except ValueError as e:
         print_red("  Error verifing: invalid second signatures.")
         print(e)
+        sys.exit()
 
     correct = True
     print("This chain last signatures are valid.")

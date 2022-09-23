@@ -14,7 +14,7 @@ def message_x(seed, counter, msg):
     Returns:
     	The message's X code
 	"""
-	x = seed +bytes(counter) + msg
+	x = seed + bytes(counter) + msg
 	return SHA256.new(x).hexdigest()
 
 def verify_prev_hash(new_block, last_block):
