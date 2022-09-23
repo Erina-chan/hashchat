@@ -120,6 +120,9 @@ class Application:
                     f.write(sig)
                     f.close()
                     contacts[contact_id]["seed"] = str(seed)
+                    f = open("seed.txt", "wb")
+                    f.write(seed)
+                    f.close()
                     save_contacts(contacts, private)
                     print_green("Message delivered successfully.\n")
 

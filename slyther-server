@@ -130,6 +130,9 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                 f.write(sig)
                 f.close()
                 contacts[contact_id]["seed"] = str(seed)
+                f = open("seed.txt", "wb")
+                f.write(seed)
+                f.close()
             else:
                 collision = False
                 position = contacts[contact_id]["counter"]-2
@@ -216,6 +219,9 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
                                     f.write(sig)
                                     f.close()
                                     contacts[contact_id]["seed"] = str(seed)
+                                    f = open("seed.txt", "wb")
+                                    f.write(seed)
+                                    f.close()
                                     blocks.append(new_block)
                                     n_blocks = n_blocks + 1
                                     expected_hash = [new_block.hash()]
@@ -245,6 +251,9 @@ def handle_client(sock, addr, public, private, public_ecdh, private_ecdh):
 
                 f = open("contact_last_sign.txt", "wb")
                 f.write(sig)
+                f.close()
+                f = open("seed.txt", "wb")
+                f.write(seed)
                 f.close()
 
         save_contacts(contacts, private)

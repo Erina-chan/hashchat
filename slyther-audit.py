@@ -130,9 +130,14 @@ if __name__ == "__main__":
         sys.exit()
 
     correct = True
+
+    seed_file = open("data/audit/seed.txt", "rb") 
+    seed = seed_file.read() 
+    seed_file.close()
+    
     print("This chain last signatures are valid.")
     print("From what message do you want to start the audit?")
-    n_start = input("Message position number: ").encode()
+    n_start = int(input("Message position number: "))
     message = input("Message content: ").encode()
     prev_block = block(chain["hashchain"][n_start-2]["prev_hash"], chain["hashchain"][n_start-2]["message_x"])
     if chain["hashchain"][n_start-1]["prev_hash"] == prev_block.hash() and chain["hashchain"][n_start-1]["message_x"] == message_x(seed, n_start, message):
