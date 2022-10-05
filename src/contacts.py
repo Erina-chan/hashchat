@@ -107,7 +107,7 @@ def export_chain(contacts, contact_id):
             break
         position = position - 1
 
-    chain = {"seed": contacts[contact_id]["seed"], "my_last_sign": {"position": my_last, "sign": contacts[contact_id]["my_last_sign"]}, "contact_last_sign": {  "position": contact_last, "sign": contacts[contact_id]["contact_last_sign"]}, "hashchain": contacts[contact_id]["hashchain"]}
+    chain = {"my_last_sign_position": my_last, "contact_last_sign_position": contact_last, "hashchain": contacts[contact_id]["hashchain"]}
 
     chain_string = json.dumps(chain)
     chain_bytes = chain_string.encode()

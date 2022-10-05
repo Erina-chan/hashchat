@@ -145,10 +145,12 @@ class Application:
         message = input("Message: ").encode()
 
         message_receipt = { "time": datetime.now().strftime("%m/%d/%y %I:%M%p"), 
-                            "recieved": False, 
+                            "recieved": True, 
                             "contents": message.decode()}
-        contacts[contact_id]["messages"].pop(1)
-        contacts[contact_id]["messages"].insert(4, message_receipt)
+        contacts[contact_id]["messages"].pop()
+        contacts[contact_id]["hashchain"].pop()
+        contacts[contact_id]["counter"] = contacts[contact_id]["counter"] - 1
+        #contacts[contact_id]["messages"].append(message_receipt)
         save_contacts(contacts, private)
         print_green("Message delivered successfully.\n")
 

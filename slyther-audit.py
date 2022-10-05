@@ -28,13 +28,8 @@ def load_hashchain():
     Returns:
         A dictionary of chain, in the format:
         { 
-            "seed": <byte>
-            "my_last_sign": {   
-                    position: <int>,
-                    sign: <signature> },
-            "contact_last_sign">: {   
-                    position: <int>,
-                    sign: <signature> },
+            "my_last_sign_position": <int>,
+            "contact_last_sign_position": <int>,
             "hashchain": {  
                     "block": {  "prev_hash": <string>,
                                 "message_x": <string> }
@@ -104,7 +99,7 @@ if __name__ == "__main__":
     print("Let's start the audit!")
     # Verify signatures
     try:
-        my_int = chain["my_last_sign"]["position"]
+        my_int = chain["my_last_sign_position"]
         my_last_block = block(chain["hashchain"][my_int]["prev_hash"], chain["hashchain"][my_int]["message_x"])
         
         in_file = open("data/audit/my_last_sign.txt", "rb") 
@@ -114,10 +109,10 @@ if __name__ == "__main__":
     except ValueError as e:
         print_red("  Error verifing: invalid first signatures.")
         print(e)
-        #sys.exit()
+        sys.exit()
 
     try:
-        contact_int = chain["contact_last_sign"]["position"]
+        contact_int = chain["contact_last_sign_position"]
         contact_last_block = block(chain["hashchain"][contact_int]["prev_hash"], chain["hashchain"][contact_int]["message_x"])
         
         in_file = open("data/audit/contact_last_sign.txt", "rb") 
@@ -134,7 +129,7 @@ if __name__ == "__main__":
     seed_file = open("data/audit/seed.txt", "rb") 
     seed = seed_file.read() 
     seed_file.close()
-    
+
     print("This chain last signatures are valid.")
     print("From what message do you want to start the audit?")
     n_start = int(input("Message position number: "))
