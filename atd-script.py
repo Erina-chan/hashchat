@@ -190,60 +190,71 @@ if __name__ == "__main__":
                 f.close()
                 contact_last_sign_position = position
 
-            if position < len(hashchain) or collision:
-                if not collision:
-                    collision_start = position
-                    my_blocks = [block(hashchain[position-2]["prev_hash"], hashchain[position-2]["message_x"])]
-                    contact_block = [block(hashchain[position-2]["prev_hash"], hashchain[position-2]["message_x"])]
-                    contact_block.append(new_block)
-                    contact_num = len(contact_block)
-                    while position-1 < len(hashchain):
-                        my_blocks.append(block(hashchain[position-1]["prev_hash"], hashchain[position-1]["message_x"]))
-                        contact_block.append(block(hashchain[position-1]["prev_hash"], hashchain[position-1]["message_x"]))
-                        position = position + 1
-                    collision = True
-                else:
-                    my_blocks.append(new_block)
-                    contact_block.insert(contact_num, new_block)
-                    contact_num = contact_num + 1
-                if confirm("\nColission detected. Do you want to finish the collision (Y/n) "):
-                    # generate atd block
-                    my_collision_block = AtD(collision_start, my_blocks)
-                    my_atd_dic = {"collision_start": collision_start, "sequency": my_collision_block.sequency}
-                    hashchain.append(my_atd_dic)
-                    my_last_sign_position = len(hashchain)
-                    my_sign = sign(str.encode(my_collision_block.hash()), my_private_key)
-                    f = open("data/atd/my_last_sign.txt", "wb")
-                    f.write(my_sign)
-                    f.close()
+            if position < len(hashchain):
+                collision_start = position
+                my_blocks = [block(hashchain[position-2]["prev_hash"], hashchain[position-2]["message_x"])]
+                contact_block = [block(hashchain[position-2]["prev_hash"], hashchain[position-2]["message_x"])]
+                contact_block.append(new_block)
+                contact_num = len(contact_block)
+                while position < len(hashchain):
+                    my_blocks.append(block(hashchain[position-1]["prev_hash"], hashchain[position-1]["message_x"]))
+                    contact_block.append(block(hashchain[position-1]["prev_hash"], hashchain[position-1]["message_x"]))
+                    position = position + 1
+                my_blocks.append(new_block)
+                
+                while True:                
+                    if confirm("\nColission detected. Do you want to finish the collision (Y/n) "):
+                        # generate atd block
+                        my_collision_block = AtD(collision_start, my_blocks)
+                        my_atd_dic = {"collision_start": collision_start, "sequency": my_collision_block.sequency}
+                        hashchain.append(my_atd_dic)
+                        my_last_sign_position = len(hashchain)
+                        my_sign = sign(str.encode(my_collision_block.hash()), my_private_key)
+                        f = open("data/atd/my_last_sign.txt", "wb")
+                        f.write(my_sign)
+                        f.close()
 
-                    contact_collision_block = AtD(collision_start, contact_block)
-                    contact_atd_dic = {"collision_start": collision_start, "sequency": contact_collision_block.sequency}
-                    hashchain.append(contact_atd_dic)
-                    contact_last_sign_position = len(hashchain)
-                    contact_sign = sign(str.encode(contact_collision_block.hash()), contact_private_key)
-                    f = open("data/atd/contact_last_sign.txt", "wb")
-                    f.write(contact_sign)
-                    f.close()
-                    collision = False
+                        contact_collision_block = AtD(collision_start, contact_block)
+                        contact_atd_dic = {"collision_start": collision_start, "sequency": contact_collision_block.sequency}
+                        hashchain.append(contact_atd_dic)
+                        contact_last_sign_position = len(hashchain)
+                        contact_sign = sign(str.encode(contact_collision_block.hash()), contact_private_key)
+                        f = open("data/atd/contact_last_sign.txt", "wb")
+                        f.write(contact_sign)
+                        f.close()
 
-                    message = input("My next message after collision finish: ").encode()
-                    sender = True
-                    position = len(hashchain)
-                    new_message = {"position": position, "recieved": sender, "contents": message.decode()}
-                    messages.append(new_message)
+                        message = input("My next message after collision end: ").encode()
+                        sender = True
+                        position = len(hashchain)
+                        new_message = {"position": position, "recieved": sender, "contents": message.decode()}
+                        messages.append(new_message)
 
-                    prev_atd_hash = contact_collision_block.hash()
-                    new_block = block(prev_atd_hash, message_x(seed, position, message))
-                    new_block_dic = {"prev_hash": prev_atd_hash, "message_x": message_x(seed, position, message)}
-                    hashchain.append(new_block_dic)
-                    
-                    my_sign = sign(str.encode(new_block.hash()), my_private_key)
-                    f = open("data/atd/my_last_sign.txt", "wb")
-                    f.write(my_sign)
-                    f.close()
-                    my_last_sign_position = position
+                        prev_atd_hash = contact_collision_block.hash()
+                        new_block = block(prev_atd_hash, message_x(seed, position, message))
+                        new_block_dic = {"prev_hash": prev_atd_hash, "message_x": message_x(seed, position, message)}
+                        hashchain.append(new_block_dic)
+                        
+                        my_sign = sign(str.encode(new_block.hash()), my_private_key)
+                        f = open("data/atd/my_last_sign.txt", "wb")
+                        f.write(my_sign)
+                        f.close()
+                        my_last_sign_position = position
+                        break
+                    else:
+                        message = input("Next message content in the collision: ").encode()
+                        sender = False
+                        position = int(input("This message's position is number: "))
+                        new_message = { "position": position, "recieved": sender, "contents": message.decode()}
+                        messages.append(new_message)
 
+                        prev_block = my_blocks[-1]
+                        new_block = block(prev_block.hash(), message_x(seed, position, message))
+                        new_block_dic = {"prev_hash": prev_block.hash(), "message_x": message_x(seed, position, message)}
+                        hashchain.append(new_block_dic)
+
+                        my_blocks.append(new_block)
+                        contact_block.insert(contact_num, new_block)
+                        contact_num = contact_num + 1
         except KeyboardInterrupt:
             if confirm("\nDo you like to finish atd-script? (Y/n) "):
                break
