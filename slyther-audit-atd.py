@@ -130,12 +130,13 @@ def test_collision(first_collision_msg, seed, atd, collision_list):
     seq_list = atd.sequency.copy()
     prev_block = block(collision_list[0]["prev_hash"], collision_list[0]["message_x"])
     seq_list.remove(prev_block.hash())
-    for index, block in enumerate(collision_list[1:-1]):
-        now_block = block(block["prev_hash"], block["message_x"])
+    for index, blo in enumerate(collision_list[1:-1]):
+        now_block = block(blo["prev_hash"], blo["message_x"])
         if now_block.prev_hash == prev_block.hash():
             seq_list.remove(now_block.hash())
             prev_block = now_block
         else:
+            breakpoint()
             msg_x = message_x(seed, atd.position, first_collision_msg)
             prev_block = block(collision_list[0]["prev_hash"], collision_list[0]["message_x"])
             if now_block.prev_hash != prev_block.hash() or now_block.message_x != msg_x:
@@ -144,7 +145,7 @@ def test_collision(first_collision_msg, seed, atd, collision_list):
             seq_list.remove(now_block.hash())
             prev_block = now_block
             counter = atd.position + 1
-            for j, element in enumerate(collision_list[index:-1]):
+            for j, element in enumerate(collision_list[index+1:-1]):
                 try:
                     message = input("Next message content: ").encode()
                     msg_x = message_x(seed, counter, message)
@@ -235,14 +236,19 @@ if __name__ == "__main__":
                     sys.exit()
                 first_atd = AtD(chain["hashchain"][n_start + n_atd1]["collision_start"], [])
                 first_atd.sequency = chain["hashchain"][n_start + n_atd1]["sequency"]
-                test_collision(message, seed, first_atd, chain["hashchain"][first_atd.position-2:n_start + n_atd1 - 1])
+                test_collision(message, seed, first_atd, chain["hashchain"][first_atd.position-2:n_start + n_atd1])
+                found_atd = AtD(chain["hashchain"][n_start + n_atd1 + 1]["collision_start"], [])
+                found_atd.sequency = chain["hashchain"][n_start + n_atd1 + 1]["sequency"]
+                atd_second =  verify_atd(chain["hashchain"][found_atd.position-2:n_start + n_atd1], found_atd)
+                if not atd_second:
+                    print("May happened a change in the records.")
+                    sys.exit()
     
     if n_atd1 < 0:
         prev_block = block(chain["hashchain"][n_start-1]["prev_hash"], chain["hashchain"][n_start-1]["message_x"])
         counter = n_start+1
     else:
-        prev_block = AtD(chain["hashchain"][n_start+n_atd1+1]["collision_start"], [])
-        prev_block.sequency = chain["hashchain"][n_start+n_atd1+1]["sequency"]
+        prev_block = found_atd
         counter = n_start+n_atd1+2
 
     n = 0
@@ -268,11 +274,16 @@ if __name__ == "__main__":
                         sys.exit()
                     my_atd = AtD(chain["hashchain"][counter + n + collision]["collision_start"], [])
                     my_atd.sequency = chain["hashchain"][counter + n + collision]["sequency"]
-                    test_collision(message, seed, my_atd, chain["hashchain"][my_atd.position-2:counter+n+collision-1])
+                    test_collision(message, seed, my_atd, chain["hashchain"][my_atd.position-2:counter+n+collision])
                     
-                    prev_block = AtD(chain["hashchain"][counter + n + collision + 1]["collision_start"], [])
-                    prev_block.sequency = chain["hashchain"][counter + n + collision + 1]["sequency"]
-                    n = n + collision + 2
+                    found_atd = AtD(chain["hashchain"][counter + n + collision + 1]["collision_start"], [])
+                    found_atd.sequency = chain["hashchain"][counter + n + collision + 1]["sequency"]
+                    atd_second =  verify_atd(chain["hashchain"][found_atd.position-2:counter + n + collision], found_atd)
+                    if not atd_second:
+                        print("May happened a change in the records.")
+                        sys.exit()
+                    prev_block = found_atd
+                    n = n + collision + 3
 
         except KeyboardInterrupt:
             if confirm("\nWould you like to conclude the audit? (Y/n) "):
