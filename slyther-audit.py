@@ -148,6 +148,7 @@ if __name__ == "__main__":
             except KeyboardInterrupt:
                 if confirm("\nWould you like to conclude the audit? (Y/n) "):
                     # checks the link of the last audited block to the next in the chain
+                    # Tá errado, tem que verificar até o final da chain
                     prev_block = block(chain["hashchain"][n_start-1]["prev_hash"], chain["hashchain"][n_start-1]["message_x"])
                     if chain["hashchain"][n_start]["prev_hash"] != prev_block.hash():
                         print("May happened a change in the records.")
