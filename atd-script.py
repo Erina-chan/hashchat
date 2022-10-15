@@ -225,7 +225,7 @@ if __name__ == "__main__":
 
                         message = input("My next message after collision end: ").encode()
                         sender = True
-                        position = len(hashchain)
+                        position = len(hashchain)+1
                         new_message = {"position": position, "recieved": sender, "contents": message.decode()}
                         messages.append(new_message)
 

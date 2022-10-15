@@ -130,13 +130,12 @@ def test_collision(first_collision_msg, seed, atd, collision_list):
     seq_list = atd.sequency.copy()
     prev_block = block(collision_list[0]["prev_hash"], collision_list[0]["message_x"])
     seq_list.remove(prev_block.hash())
-    for index, blo in enumerate(collision_list[1:-1]):
+    for index, blo in enumerate(collision_list[1:]):
         now_block = block(blo["prev_hash"], blo["message_x"])
         if now_block.prev_hash == prev_block.hash():
             seq_list.remove(now_block.hash())
             prev_block = now_block
         else:
-            breakpoint()
             msg_x = message_x(seed, atd.position, first_collision_msg)
             prev_block = block(collision_list[0]["prev_hash"], collision_list[0]["message_x"])
             if now_block.prev_hash != prev_block.hash() or now_block.message_x != msg_x:
@@ -145,7 +144,7 @@ def test_collision(first_collision_msg, seed, atd, collision_list):
             seq_list.remove(now_block.hash())
             prev_block = now_block
             counter = atd.position + 1
-            for j, element in enumerate(collision_list[index+1:-1]):
+            for j, element in enumerate(collision_list[index+2:]):
                 try:
                     message = input("Next message content: ").encode()
                     msg_x = message_x(seed, counter, message)
@@ -158,7 +157,7 @@ def test_collision(first_collision_msg, seed, atd, collision_list):
                     counter = atd.position + 1
                 except KeyboardInterrupt:
                     if confirm("\nWould you like to conclude the audit? (Y/n) "):
-                        for rest in collision_list[j:-1]:
+                        for rest in collision_list[index+2+j:]:
                             now_block = block(rest["prev_hash"], rest["message_x"])
                             if now_block.prev_hash != prev_block.hash():
                                 print("May happened a change in the records.")
@@ -230,7 +229,7 @@ if __name__ == "__main__":
             if chain["hashchain"][n_start-1]["prev_hash"] == prev_block.hash() and chain["hashchain"][n_start-1]["message_x"] == message_x(seed, n_start, message):
                 n_atd1 = -1
             else:
-                n_atd1 = search_atd(chain["hashchain"][n_start:-1])
+                n_atd1 = search_atd(chain["hashchain"][n_start:])
                 if type(n_atd1) is bool:
                     print("May happened a change in the records.")
                     sys.exit()
@@ -252,7 +251,7 @@ if __name__ == "__main__":
         counter = n_start+n_atd1+2
 
     n = 0
-    while n <= len(chain["hashchain"][counter-1:-1]):
+    while n < len(chain["hashchain"][counter-1:]):
         now_block = block(chain["hashchain"][counter-1+n]["prev_hash"], chain["hashchain"][counter-1+n]["message_x"])
         try:
             message = input("Next message content: ").encode()
@@ -268,7 +267,7 @@ if __name__ == "__main__":
                     prev_block = now_block
                     n = n + 1
                 else: 
-                    collision = search_atd(chain["hashchain"][counter+n:-1])
+                    collision = search_atd(chain["hashchain"][counter+n:])
                     if type(collision) is bool:
                         print("May happened a change in the records.")
                         sys.exit()
@@ -288,7 +287,7 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             if confirm("\nWould you like to conclude the audit? (Y/n) "):
                 ending = 0
-                while ending <= len(chain["hashchain"][counter+n-1:-1]):
+                while ending < len(chain["hashchain"][counter+n-1:]):
                     now_block = block(chain["hashchain"][counter-1+n+ending]["prev_hash"], chain["hashchain"][counter-1+n+ending]["message_x"])
                     if isinstance(prev_block, AtD):
                         if now_block.prev_hash != prev_block.hash():
@@ -301,7 +300,7 @@ if __name__ == "__main__":
                             prev_block = now_block
                             ending = ending + 1
                         else:
-                            colli = search_atd(chain["hashchain"][counter+n+ending:-1])
+                            colli = search_atd(chain["hashchain"][counter+n+ending:])
                             if type(colli) is bool:
                                 print("May happened a change in the records.")
                                 sys.exit()
